@@ -323,32 +323,55 @@ data class Message(val author: String, val body: String)
 
 @Composable
 fun MessageCard(msg: Message) {
+
+    val context = LocalContext.current
+    val db = remember { AppDatabase.get(context) }
+    val profile = remember { db.profileDao().load() }
+
     Row(modifier = Modifier.padding(8.dp)) {
-        Image(
-            painter = painterResource(R.drawable.profile_picture),
-            contentDescription = null,
-            modifier = Modifier
-                .size(40.dp)
-                .clip(CircleShape)
-                .border(1.5.dp, MaterialTheme.colorScheme.primary, CircleShape)
-        )
+
+        if (profile != null && File(profile.imagePath).exists()) {
+            Image(
+                painter = rememberAsyncImagePainter(File(profile.imagePath)),
+                contentDescription = null,
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .border(1.5.dp, MaterialTheme.colorScheme.primary, CircleShape)
+            )
+        } else {
+            Image(
+                painter = painterResource(R.drawable.profile_picture),
+                contentDescription = null,
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .border(1.5.dp, MaterialTheme.colorScheme.primary, CircleShape)
+            )
+        }
+
         Spacer(modifier = Modifier.width(8.dp))
+
         var isExpanded by remember { mutableStateOf(false) }
+
         val surfaceColor by animateColorAsState(
             if (isExpanded) MaterialTheme.colorScheme.primary
             else MaterialTheme.colorScheme.surface
         )
+
         Column(
             modifier = Modifier
                 .clickable { isExpanded = !isExpanded }
                 .fillMaxWidth()
         ) {
             Text(
-                text = msg.author,
+                text = profile?.username ?: msg.author,
                 color = MaterialTheme.colorScheme.secondary,
                 fontWeight = FontWeight.Bold
             )
+
             Spacer(modifier = Modifier.height(4.dp))
+
             Surface(
                 shape = MaterialTheme.shapes.medium,
                 shadowElevation = 1.dp,
@@ -364,6 +387,8 @@ fun MessageCard(msg: Message) {
         }
     }
 }
+
+
 
 @Composable
 fun Conversation(messages: List<Message>) {
